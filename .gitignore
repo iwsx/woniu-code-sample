@@ -34,4 +34,5 @@ node_modules/
 .vs
 bin/
 packages/
+package-lock.json
 
