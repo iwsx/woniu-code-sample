@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/aop https://www.springframework.org/schema/aop/spring-aop.xsd">
+
+
+
+    <context:component-scan base-package="com.iwsx.spring">
+        <!-- 配置过滤器，排除@Controller注解的bean-->
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+
+    <!-- 创建切面bean -->
+    <bean id="loggingAspect" class="com.iwsx.spring.aopxml.LoggingAspect"></bean>
+    <bean id="validationAspect" class="com.iwsx.spring.aopxml.ValidationAspect"></bean>
+
+    <!-- 配置AOP -->
+    <aop:config>
+        <!-- 配置切入点表达式 -->
+        <aop:pointcut id="pointcut" expression="execution(* com.iwsx.spring.aopxml.IMath.*(..))"/>
+        <!-- 配置切面及通知 -->
+        <aop:aspect ref="validationAspect" order="1">
+            <aop:before method="beforeMethod" pointcut-ref="pointcut"></aop:before>
+        </aop:aspect>
+        <aop:aspect ref="loggingAspect" order="2">
+            <!--<aop:before method="beforeMethod" pointcut-ref="pointcut"/>
+            <aop:after method="afterMethod" pointcut-ref="pointcut"/>
+            <aop:after-throwing method="afterThrowing" pointcut-ref="pointcut" throwing="ex"/>
+            <aop:after-returning method="afterReturning" pointcut-ref="pointcut" returning="result"/>-->
+            <aop:around method="aroundMethod" pointcut-ref="pointcut"/>
+        </aop:aspect>
+    </aop:config>
+
+</beans>

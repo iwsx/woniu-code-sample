@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- mapper:根标签，namespace：命名空间，随便写，一般保证命名空间唯一 -->
+<mapper namespace="com.iwsx.dao.UserMapper">
+    <!-- statement，内容：sql语句。id：唯一标识，随便写，在同一个命名空间下保持唯一
+       resultType：sql语句查询结果集的封装类型
+     -->
+    <select id="queryUserByNameOrCode" resultType="com.iwsx.entity.User">
+        SELECT * from tb_user
+        <where>
+            <if test="name != null and name.trim() != ''">
+                and user_name LIKE '%${name}%'
+            </if>
+            <if test="code != null and code.trim() != ''">
+                AND code LIKE '%${code}%'
+            </if>
+        </where>
+    </select>
+
+    <select id="queryUserById" resultType="com.iwsx.entity.User">
+        SELECT * from tb_user WHERE id = #{id}
+    </select>
+
+    <insert id="addUser">
+        INSERT tb_user (user_name,
+                    birthday,
+                    role)
+        VALUES (#{name},
+                #{birthday},
+                #{role})
+    </insert>
+
+    <update id="updateUser">
+        update tb_user
+        <trim prefix="set" suffixOverrides=",">
+            <if test="name != null and name.trim() != ''">
+                user_name = #{name}
+            </if>
+            <if test="birthday != null">
+                birthday = #{birthday}
+            </if>
+        </trim>
+        where id = #{id};
+    </update>
+
+    <delete id="deleteUserById">
+        DELETE tb_user WHERE id = #{id}
+    </delete>
+</mapper>

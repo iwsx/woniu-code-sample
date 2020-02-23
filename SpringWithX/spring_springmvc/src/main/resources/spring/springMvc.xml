@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd
+       http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd">
+
+    <!-- 扫描 controller -->
+    <context:component-scan base-package="com.iwsx.spring_springmvc"/>
+
+    <!--
+        加了 mvc:default-servlet-handler 标签
+        SpringMVC会智能判断，路径是不是被映射过，
+        如果不被映射过，会把操作权转给Tomcat，来帮助你找目标资源，
+        通俗的讲，就是返回静态资源
+    -->
+    <mvc:default-servlet-handler />
+
+    <!-- 支持mvc注解驱动
+        在spring中一般采用@RequestMapping注解来完成映射关系，
+        要想使@RequestMapping注解生效必须向上下文中注册DefaultAnnotationHandlerMapping和一个AnnotationMethodHandlerAdapter实例，
+        这两个实例分别在类级别和方法级别处理。而annotation-driven配置帮助我们自动完成上述两个实例的注入。
+    -->
+    <mvc:annotation-driven conversion-service="conversionService"/>
+
+    <!--配置自定义类型转换器-->
+    <bean id="conversionService" class="org.springframework.format.support.FormattingConversionServiceFactoryBean">
+        <!--<property name="converters">
+            <set>
+                <bean class="com.iwsx.spring_springmvc.helper.StringToDateConverter"></bean>
+            </set>
+        </property>-->
+    </bean>
+
+    <!-- 定义视图解析器 -->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/views/"/>
+        <property name="suffix" value=".jsp"/>
+    </bean>
+
+
+    <!-- 配置拦截器 -->
+    <mvc:interceptors>
+        <!-- 拦截所有资源 -->
+        <bean id="firstInterceptor" class="com.iwsx.spring_springmvc.interceptor.firstInterceptor"/>
+        <!-- 拦截指定资源 -->
+        <mvc:interceptor>
+            <mvc:mapping path="/user/testParamInterceptor"/>
+            <bean class="com.iwsx.spring_springmvc.interceptor.paramInterceptor"/>
+        </mvc:interceptor>
+    </mvc:interceptors>
+
+    <!-- 配置使用 SimpleMappingExceptionResolver 来映射异常 -->
+    <bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+        <property name="exceptionAttribute" value="ex"/>
+        <property name="exceptionMappings">
+            <props>
+                <!-- 键值对：表示某个异常有某个页面处理 -->
+                <prop key="java.lang.ArithmeticException">error</prop>
+            </props>
+        </property>
+    </bean>
+
+
+
+</beans>

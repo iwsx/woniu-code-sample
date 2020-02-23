@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/aop https://www.springframework.org/schema/aop/spring-aop.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <!-- Spring配置文件核心（数据源，与mybatis整合，事务控制）-->
+
+    <!-- 配置扫描，不扫Controller注释的 -->
+    <context:component-scan base-package="com.iwsx.spring_ssm" use-default-filters="false">
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+
+    <!-- 加载配置文件 -->
+    <context:property-placeholder location="classpath:properties/*.properties"/>
+
+    <!-- ============================== 数据源配置 ============================== -->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="driverClassName" value="${jdbc.driverClassName}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+    </bean>
+    <!-- ============================== 数据源配置 ============================== -->
+
+    <!-- ============================== Mybatis-plus配置 ============================== -->
+    <bean id="sessionFactory" class="com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean">
+        <!-- 配置mybatis配置文件路径 -->
+        <property name="configLocation" value="classpath:spring/mybatis-config.xml"/>
+        <!-- 配置数据源 -->
+        <property name="dataSource" ref="dataSource"/>
+        <!-- 配置mapper文件路径 -->
+        <property name="mapperLocations" value="classpath:com/iwsx/spring_ssm/dao/mapper/*.xml"/>
+    </bean>
+
+    <!-- 配置mybatis的扫描器，将mybatis接口的实现假如到IOC容器中 -->
+    <bean id="mapperScannerConfigurer" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.iwsx.spring_ssm.dao"/>
+    </bean>
+
+    <!-- ============================== Mybatis-plus配置 ============================== -->
+
+
+    <!-- ============================== 事务控制配置 ============================== -->
+
+    <!-- 事务管理器的配置 -->
+    <bean id="dataSourceTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <!-- 控制住数据源 -->
+        <!--  <property name="dataSource" ref="dataSource"/> -->
+        <property name="dataSource" >
+            <ref bean="dataSource"></ref>
+        </property>
+    </bean>
+    <!-- 配置事务 -->
+    <aop:config>
+        <!--
+            execution(* com.iwsx.spring_ssm.service..*(..))
+            第一个*的位置表示返回值类型，*表示所有类型
+            service..表示service下的所有包
+            第二个*的位置表示方法，*表示所有方法
+            (..)中的..表示参数任意多
+        -->
+        <aop:pointcut id="txPoint" expression="execution(* com.iwsx.spring_ssm.service..*(..))"/>
+        <!-- 配置事务增强 -->
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="txPoint"/>
+    </aop:config>
+
+    <!-- 配置事务增强，事务如何切入 -->
+    <tx:advice id="txAdvice" transaction-manager="dataSourceTransactionManager">
+        <tx:attributes>
+            <!-- 所有方法都是事务方法 -->
+            <tx:method name="*"/>
+            <!-- 以get开始的所有方法 -->
+            <tx:method name="get*" read-only="true"/>
+        </tx:attributes>
+    </tx:advice>
+
+    <!-- ============================== 事务控制配置 ============================== -->
+
+
+</beans>

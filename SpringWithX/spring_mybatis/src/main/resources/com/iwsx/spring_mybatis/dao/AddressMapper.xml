@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- mapper:根标签，namespace：命名空间，随便写，一般保证命名空间唯一 -->
+<mapper namespace="com.iwsx.spring_mybatis.dao.AddressMapper">
+
+    <!--
+        插入数据
+        parameterType：参数类型，可以省略
+        useGeneratedKeys：true，使用自增主键获取主键值策略
+        KeyProperty：指定对应的主键属性，也就是mybatis获取主键值后，将这个值封装给javaBean的哪个属性
+    -->
+    <insert id="addAddress" parameterType="com.iwsx.spring_mybatis.entity.Address" useGeneratedKeys="true" keyProperty="id">
+        insert Address(home,company) VALUES (#{home}, #{company})
+    </insert>
+
+    <insert id="addAddress2">
+        insert Address(home,company) VALUES (#{param1}, #{param2})
+    </insert>
+
+    <insert id="addAddress3">
+        insert Address(home,company) VALUES (#{home}, #{company})
+    </insert>
+
+    <!-- 命名参数仍然可以直接使用 paramN 来获取传参-->
+    <insert id="addAddress4">
+        insert Address(home,company) VALUES (#{home}, #{param2})
+    </insert>
+
+    <!-- 如果字段是POJO对象的属性时，可以用 命名参数.属性名 或者 paramN.属性名 -->
+    <insert id="addAddress5">
+        insert Address(home,company) VALUES (#{home}, #{param2.company})
+    </insert>
+
+    <!--
+        Collection,List,Array会做特殊处理
+        可以分别接用collection,list,array来获取传参，
+        或者用命名参数方式获取传参
+    -->
+    <insert id="addAddress6">
+        insert Address(home,company) VALUES (#{list[0].home}, #{list[0].company})
+    </insert>
+
+    <update id="updateAddress">
+        update Address set home=#{home}, company=#{company} where id=#{id}
+    </update>
+
+    <delete id="deleteAddress">
+        delete FROM Address where id=#{id}
+    </delete>
+
+    <select id="queryAddress" resultType="com.iwsx.spring_mybatis.entity.Address">
+        select * from Address WHERE id=#{id}
+    </select>
+
+    <!--
+        Map<String, Object> queryAddressReturnMap(int id);
+        把SQL结果按map类型返回，key表示字段，value表示字段值；
+        resultType直接用map
+    -->
+    <select id="queryAddressReturnMap" resultType="map">
+        select * from Address WHERE id=#{id}
+    </select>
+
+    <!--
+        Map<String, Address> queryAddressReturnMap2(int id);
+        把SQL结果按map类型返回，key表示某个规定的字段，value表示POJO对象；
+        resultType用POJO对象，并且需要在接口上加@MapKey("xxx")注释
+    -->
+    <select id="queryAddressReturnMap2" resultType="com.iwsx.spring_mybatis.entity.Address">
+        select * from Address WHERE id=#{id}
+    </select>
+
+    <!--
+        自定义某个javaBean的封装规则
+        type：自定义规则的Java类型
+        id：唯一id方便引用
+    -->
+    <resultMap id="myAddress" type="com.iwsx.spring_mybatis.entity.Address">
+        <!--
+            指定主键列
+            column：指定哪一列
+            property：指定对应的javaBean的属性
+        -->
+        <id column="id" property="id"></id>
+        <!-- 定义普通列封装规则 -->
+        <result column="home" property="home"></result>
+        <!--
+            对于表中引用另外一张表的情况
+            1.可以使用级联属性 -->
+        <result column="pccode" property="pc.code"></result>
+
+        <!--
+            2.可以使用association标签
+            association可以指定联合的javaBean对象
+            property：可以指定哪个属性是联合的对象
+            javaType：指定这个属性对象的类型【不能省略】
+        -->
+        <association property="pc" javaType="com.iwsx.spring_mybatis.entity.PostCode">
+            <result column="pccode" property="code"></result>
+        </association>
+
+        <!--
+            collection 定义关联集合类型的属性的封装规则
+            ofType 指定集合里面元素的类型
+        -->
+        <collection property="xx" ofType="xx">
+            <id></id>
+            <result></result>
+        </collection>
+    </resultMap>
+
+   <!-- <select id="queryAddressReturnMap3" resultMap="myAddress">
+        select a.id,a.home,a.company,b.code pccode from address a, postcode b where a.home = b.home
+        AND a.id=#{id}
+    </select>-->
+
+    <select id="queryAddressReturnMap3" resultMap="myAddress2">
+        select a.id,a.home,a.company from address a where a.id=#{id}
+    </select>
+
+    <resultMap id="myAddress2" type="com.iwsx.spring_mybatis.entity.Address">
+        <!--
+            指定主键列
+            column：指定哪一列
+            property：指定对应的javaBean的属性
+        -->
+        <id column="id" property="id"></id>
+        <!-- 定义普通列封装规则 -->
+        <result column="home" property="home"></result>
+        <!--
+            利用association标签，配置属性select指定查询方法，指定方法传参column，可以实现分布查询
+            扩展：
+            1.association的column如果想传递多个参数怎么办？
+                将多列的值封装成map传递，
+                column="{key1=column1,key2=column2}"
+            2.fetchType 可以定义是否延迟加载（即使全局定义了延迟加载）
+                eager 立即加载
+                lazy  延迟加载
+        -->
+        <association property="pc" select="com.iwsx.spring_mybatis.dao.PostCodeMapper.queryPostCodeByHome"
+                     column="{homeStr=home}" fetchType="eager">
+        </association>
+
+        <!--
+            discriminator 鉴别器
+                column 用来判断的字段
+                javaType 用来判断的字段类型
+
+            case 判断路径
+                value 值
+                resultType 返回的封装结果
+
+            用途：一般用于希望根据某些条件对结果进行不同显示
+            例如：下面示例，如果home是 武汉的，进行分步查询
+                          如果home是 福建的，进行其他查询
+        -->
+        <discriminator javaType="string" column="home">
+            <case value="武汉" resultType="com.iwsx.spring_mybatis.entity.Address">
+                <association property="pc" select="com.iwsx.spring_mybatis.dao.PostCodeMapper.queryPostCodeByHome"
+                             column="{homeStr=home}" fetchType="eager">
+                </association>
+            </case>
+            <case value="福建" resultType="com.iwsx.spring_mybatis.entity.Address">
+                <id column="id" property="id"></id>
+                <!-- 定义普通列封装规则 -->
+                <result column="home" property="home"></result>
+            </case>
+        </discriminator>
+
+       <!-- <association property="pc" select="com.iwsx.spring_mybatis.dao.PostCodeMapper.queryPostCodeByHome"
+            column="home">
+        </association>-->
+    </resultMap>
+
+</mapper>
